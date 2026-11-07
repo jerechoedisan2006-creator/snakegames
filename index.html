@@ -3,177 +3,259 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snake Game</title>
+    <title>3D Snake Game</title>
     <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background: #2c3e50;
-            color: white;
-            font-family: Arial, sans-serif;
-        }
-        h1 { margin-bottom: 10px; }
-        #game-container { position: relative; }
-        canvas {
-            border: 4px solid #ecf0f1;
-            background: #000;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        }
-        #score {
-            position: absolute;
-            top: -30px;
-            left: 0;
-            font-size: 20px;
-        }
-        #game-over {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8);
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            display: none;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            background: #27ae60;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        button:hover { background: #2ecc71; }
-        #instructions {
-            margin-top: 15px;
-            font-size: 14px;
-            color: #bdc3c7;
-        }
+        body { margin: 0; overflow: hidden; background: #050508; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        #ui { position: absolute; top: 20px; left: 20px; color: #fff; pointer-events: none; text-shadow: 0 2px 8px rgba(0,0,0,0.7); }
+        #score { font-size: 24px; font-weight: bold; margin-top: 8px; color: #00ff88; }
+        #gameOver { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #fff; text-align: center; display: none; background: rgba(10, 15, 25, 0.9); padding: 40px; border-radius: 20px; backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 0 40px rgba(0,0,0,0.6); }
+        #gameOver h2 { margin: 0 0 15px 0; font-size: 36px; color: #ff4444; text-shadow: 0 0 20px rgba(255,68,68,0.5); }
+        #finalScore { font-size: 22px; margin-bottom: 25px; color: #00ff88; }
+        button { padding: 14px 32px; font-size: 20px; background: linear-gradient(135deg, #00c853, #00e676); border: none; color: #fff; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,200,83,0.4); transition: transform 0.1s; }
+        button:hover { background: linear-gradient(135deg, #00e676, #69f0ae); transform: translateY(-2px); }
+        button:active { transform: translateY(0); }
+        #instructions { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.5); pointer-events: none; font-size: 16px; letter-spacing: 2px; }
+        canvas { display: block; }
     </style>
 </head>
 <body>
-    <h1>Snake Game</h1>
-    <div id="game-container">
+    <div id="ui">
+        <div style="font-size: 32px; letter-spacing: 4px; text-transform: uppercase; color: #00ff88; text-shadow: 0 0 30px rgba(0,255,136,0.3);">3D Snake</div>
         <div id="score">Score: 0</div>
-        <canvas id="snakeGame" width="400" height="400"></canvas>
-        <div id="game-over">
-            <h2>Game Over!</h2>
-            <div id="final-score">Score: 0</div>
-            <button onclick="resetGame()">Play Again</button>
-        </div>
     </div>
-    <div id="instructions">Use Arrow Keys to Move</div>
+    <div id="gameOver">
+        <h2>Game Over</h2>
+        <div id="finalScore">Score: 0</div>
+        <button onclick="resetGame()">Play Again</button>
+    </div>
+    <div id="instructions">Arrow Keys to Move</div>
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
 
-    <script>
-        const canvas = document.getElementById("snakeGame");
-        const ctx = canvas.getContext("2d");
-        const scoreElement = document.getElementById("score");
-        const finalScoreElement = document.getElementById("final-score");
-        const gameOverScreen = document.getElementById("game-over");
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050508);
+        scene.fog = new THREE.FogExp2(0x050508, 0.02);
 
-        const box = 20;
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 22, 22);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 50;
+        dirLight.shadow.camera.left = -15;
+        dirLight.shadow.camera.right = 15;
+        dirLight.shadow.camera.top = 15;
+        dirLight.shadow.camera.bottom = -15;
+        scene.add(dirLight);
+
+        const pointLight = new THREE.PointLight(0x00ff88, 1, 15);
+        pointLight.position.set(0, 2, 0);
+        scene.add(pointLight);
+
+        const gridHelper = new THREE.GridHelper(40, 40, 0x1a1a2e, 0x0f0f1a);
+        gridHelper.position.y = 0.01;
+        scene.add(gridHelper);
+
+        const boardSize = 20;
+        const cellSize = 1;
+
         let score = 0;
-        let gameInterval;
         let gameRunning = true;
+        let lastMoveTime = 0;
+        const moveInterval = 150;
+        let direction = new THREE.Vector3(1, 0, 0);
+        let nextDirection = new THREE.Vector3(1, 0, 0);
 
-        let snake = [];
-        snake[0] = { x: 10 * box, y: 10 * box };
+        // Each segment: { pos: Vector3, mesh: Mesh }
+        const snake = [];
 
-        let food = {
-            x: Math.floor(Math.random() * 19 + 1) * box,
-            y: Math.floor(Math.random() * 19 + 1) * box
+        const headMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff88, emissive: 0x003300, roughness: 0.3, metalness: 0.1 });
+        const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x00aa44, emissive: 0x001100, roughness: 0.4, metalness: 0.0 });
+        const foodMaterial = new THREE.MeshStandardMaterial({ color: 0xff4444, emissive: 0x330000, roughness: 0.2, metalness: 0.1 });
+
+        function initSnake() {
+            for (const seg of snake) {
+                scene.remove(seg.mesh);
+                seg.mesh.geometry.dispose();
+                seg.mesh.material.dispose();
+            }
+            snake.length = 0;
+
+            const startX = 0;
+            const startZ = 0;
+            // Add tail first, head last, so head ends up at snake[0]
+            addSegment(startX - 2, 0, startZ, false);  // tail
+            addSegment(startX - 1, 0, startZ, false);  // body
+            addSegment(startX,     0, startZ, true);   // head
+            direction.set(1, 0, 0);
+            nextDirection.set(1, 0, 0);
+        }
+
+        function addSegment(x, y, z, isHead = false) {
+            const geo = new THREE.BoxGeometry(0.85, 0.85, 0.85);
+            const mat = isHead ? headMaterial : bodyMaterial;
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x * cellSize, 0.45, z * cellSize);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            scene.add(mesh);
+            snake.unshift({ pos: new THREE.Vector3(x, y, z), mesh: mesh });
+        }
+
+        let foodMesh;
+        let foodPos = new THREE.Vector3(5, 0, 5);
+
+        function spawnFood() {
+            if (foodMesh) {
+                scene.remove(foodMesh);
+                foodMesh.geometry.dispose();
+                foodMesh.material.dispose();
+            }
+
+            let valid = false;
+            let x, z;
+            while (!valid) {
+                x = Math.floor(Math.random() * boardSize) - boardSize / 2;
+                z = Math.floor(Math.random() * boardSize) - boardSize / 2;
+                valid = true;
+                for (const s of snake) {
+                    if (s.pos.x === x && s.pos.z === z) { valid = false; break; }
+                }
+            }
+
+            foodPos.set(x, 0, z);
+
+            const geo = new THREE.IcosahedronGeometry(0.4, 2);
+            foodMesh = new THREE.Mesh(geo, foodMaterial);
+            foodMesh.position.set(x * cellSize, 0.4, z * cellSize);
+            foodMesh.castShadow = true;
+            scene.add(foodMesh);
+
+            foodMesh.userData = { time: 0 };
+        }
+
+        function updateSnake() {
+            if (!gameRunning) return;
+
+            direction.copy(nextDirection);
+
+            const head = snake[0].pos.clone();
+            head.x += direction.x;
+            head.z += direction.z;
+
+            const half = boardSize / 2;
+            if (head.x < -half || head.x >= half || head.z < -half || head.z >= half) {
+                gameOver();
+                return;
+            }
+
+            for (let i = 0; i < snake.length; i++) {
+                if (head.x === snake[i].pos.x && head.z === snake[i].pos.z) {
+                    gameOver();
+                    return;
+                }
+            }
+
+            const ateFood = (head.x === foodPos.x && head.z === foodPos.z);
+
+            addSegment(head.x, head.y, head.z, true);
+            if (snake[1]) snake[1].mesh.material = bodyMaterial;
+
+            if (ateFood) {
+                score += 10;
+                document.getElementById('score').textContent = 'Score: ' + score;
+                spawnFood();
+            } else {
+                const tail = snake.pop();
+                scene.remove(tail.mesh);
+                tail.mesh.geometry.dispose();
+                tail.mesh.material.dispose();
+            }
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            document.getElementById('finalScore').textContent = 'Score: ' + score;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+
+        window.resetGame = function resetGame() {
+            score = 0;
+            document.getElementById('score').textContent = 'Score: 0';
+            document.getElementById('gameOver').style.display = 'none';
+            gameRunning = true;
+            lastMoveTime = performance.now();
+            initSnake();
+            spawnFood();
         };
 
-        let d;
-
-        document.addEventListener("keydown", direction);
-
-        function direction(event) {
-            let key = event.keyCode;
-            if ((key == 37 || key == 39 || key == 38 || key == 40) && !gameRunning) return;
-
-            if(key == 37 && d != "RIGHT") d = "LEFT";
-            else if(key == 38 && d != "DOWN") d = "UP";
-            else if(key == 39 && d != "LEFT") d = "RIGHT";
-            else if(key == 40 && d != "UP") d = "DOWN";
-        }
-
-        function collision(head, array) {
-            for(let i = 0; i < array.length; i++) {
-                if(head.x == array[i].x && head.y == array[i].y) return true;
+        window.addEventListener('keydown', (e) => {
+            if (!gameRunning) return;
+            switch (e.key) {
+                case 'ArrowUp':
+                    if (direction.z === 0) nextDirection.set(0, 0, -1);
+                    break;
+                case 'ArrowDown':
+                    if (direction.z === 0) nextDirection.set(0, 0, 1);
+                    break;
+                case 'ArrowLeft':
+                    if (direction.x === 0) nextDirection.set(-1, 0, 0);
+                    break;
+                case 'ArrowRight':
+                    if (direction.x === 0) nextDirection.set(1, 0, 0);
+                    break;
             }
-            return false;
-        }
+        });
 
-        function draw() {
-            ctx.fillStyle = "black";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const clock = new THREE.Clock();
 
-            for(let i = 0; i < snake.length; i++) {
-                ctx.fillStyle = (i == 0) ? "#2ecc71" : "#27ae60";
-                ctx.fillRect(snake[i].x, snake[i].y, box, box);
-                ctx.strokeStyle = "#000";
-                ctx.strokeRect(snake[i].x, snake[i].y, box, box);
-            }
+        function animate() {
+            requestAnimationFrame(animate);
 
-            ctx.fillStyle = "#e74c3c";
-            ctx.fillRect(food.x, food.y, box, box);
+            const time = performance.now();
+            const delta = clock.getDelta();
 
-            let snakeX = snake[0].x;
-            let snakeY = snake[0].y;
-
-            if( d == "LEFT") snakeX -= box;
-            if( d == "UP") snakeY -= box;
-            if( d == "RIGHT") snakeX += box;
-            if( d == "DOWN") snakeY += box;
-
-            if(snakeX == food.x && snakeY == food.y) {
-                score++;
-                scoreElement.innerHTML = "Score: " + score;
-                food = {
-                    x: Math.floor(Math.random() * 19 + 1) * box,
-                    y: Math.floor(Math.random() * 19 + 1) * box
-                };
-            } else {
-                snake.pop();
+            if (foodMesh) {
+                foodMesh.userData.time += delta * 2;
+                foodMesh.position.y = 0.4 + Math.sin(foodMesh.userData.time) * 0.15;
+                foodMesh.rotation.y += delta;
+                foodMesh.rotation.x += delta * 0.5;
             }
 
-            let newHead = { x: snakeX, y: snakeY };
-
-            if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
-                clearInterval(gameInterval);
-                gameRunning = false;
-                finalScoreElement.innerHTML = "Score: " + score;
-                gameOverScreen.style.display = "block";
+            if (gameRunning && time - lastMoveTime > moveInterval) {
+                updateSnake();
+                lastMoveTime = time;
             }
 
-            snake.unshift(newHead);
+            camera.position.x = Math.sin(time * 0.001) * 2;
+            camera.lookAt(0, 0, 0);
+
+            renderer.render(scene, camera);
         }
 
-        function resetGame() {
-            snake = [];
-            snake[0] = { x: 10 * box, y: 10 * box };
-            score = 0;
-            scoreElement.innerHTML = "Score: 0";
-            d = null;
-            gameRunning = true;
-            gameOverScreen.style.display = "none";
-            food = {
-                x: Math.floor(Math.random() * 19 + 1) * box,
-                y: Math.floor(Math.random() * 19 + 1) * box
-            };
-            clearInterval(gameInterval);
-            gameInterval = setInterval(draw, 100);
-        }
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
 
-        gameInterval = setInterval(draw, 100);
+        resetGame();
+        animate();
     </script>
 </body>
 </html>
