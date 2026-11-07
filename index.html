@@ -5,22 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Snake Game</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #050508; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        #ui { position: absolute; top: 20px; left: 20px; color: #fff; pointer-events: none; text-shadow: 0 2px 8px rgba(0,0,0,0.7); }
-        #score { font-size: 24px; font-weight: bold; margin-top: 8px; color: #00ff88; }
-        #gameOver { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #fff; text-align: center; display: none; background: rgba(10, 15, 25, 0.9); padding: 40px; border-radius: 20px; backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 0 40px rgba(0,0,0,0.6); }
-        #gameOver h2 { margin: 0 0 15px 0; font-size: 36px; color: #ff4444; text-shadow: 0 0 20px rgba(255,68,68,0.5); }
-        #finalScore { font-size: 22px; margin-bottom: 25px; color: #00ff88; }
+        body { margin: 0; overflow: hidden; background: #f0f0f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; }
+        #ui { position: absolute; top: 20px; left: 20px; color: #333; pointer-events: none; text-shadow: none; }
+        #score { font-size: 24px; font-weight: bold; margin-top: 8px; color: #00aa44; }
+        #gameOver { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #333; text-align: center; display: none; background: rgba(255, 255, 255, 0.95); padding: 40px; border-radius: 20px; backdrop-filter: blur(12px); border: 2px solid #00aa44; box-shadow: 0 0 40px rgba(0,0,0,0.2); }
+        #gameOver h2 { margin: 0 0 15px 0; font-size: 36px; color: #ff4444; text-shadow: none; }
+        #finalScore { font-size: 22px; margin-bottom: 25px; color: #00aa44; }
         button { padding: 14px 32px; font-size: 20px; background: linear-gradient(135deg, #00c853, #00e676); border: none; color: #fff; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,200,83,0.4); transition: transform 0.1s; }
         button:hover { background: linear-gradient(135deg, #00e676, #69f0ae); transform: translateY(-2px); }
         button:active { transform: translateY(0); }
-        #instructions { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.5); pointer-events: none; font-size: 16px; letter-spacing: 2px; }
+        #instructions { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); color: #666; pointer-events: none; font-size: 16px; letter-spacing: 2px; }
         canvas { display: block; }
     </style>
 </head>
 <body>
     <div id="ui">
-        <div style="font-size: 32px; letter-spacing: 4px; text-transform: uppercase; color: #00ff88; text-shadow: 0 0 30px rgba(0,255,136,0.3);">3D Snake</div>
+        <div style="font-size: 32px; letter-spacing: 4px; text-transform: uppercase; color: #00aa44; text-shadow: 0 0 20px rgba(0,170,68,0.3);">3D Snake</div>
         <div id="score">Score: 0</div>
     </div>
     <div id="gameOver">
@@ -33,11 +33,11 @@
         import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
 
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x050508);
-        scene.fog = new THREE.FogExp2(0x050508, 0.02);
+        scene.background = new THREE.Color(0xe0e0e0);
+        scene.fog = new THREE.FogExp2(0xe0e0e0, 0.005);
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-        camera.position.set(0, 22, 22);
+        camera.position.set(0, 25, 28);
         camera.lookAt(0, 0, 0);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -47,32 +47,62 @@
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         document.body.appendChild(renderer.domElement);
 
-        const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
         scene.add(ambientLight);
 
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        dirLight.position.set(10, 20, 10);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight.position.set(15, 25, 15);
         dirLight.castShadow = true;
-        dirLight.shadow.mapSize.width = 1024;
-        dirLight.shadow.mapSize.height = 1024;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
         dirLight.shadow.camera.near = 0.5;
-        dirLight.shadow.camera.far = 50;
-        dirLight.shadow.camera.left = -15;
-        dirLight.shadow.camera.right = 15;
-        dirLight.shadow.camera.top = 15;
-        dirLight.shadow.camera.bottom = -15;
+        dirLight.shadow.camera.far = 60;
+        dirLight.shadow.camera.left = -20;
+        dirLight.shadow.camera.right = 20;
+        dirLight.shadow.camera.top = 20;
+        dirLight.shadow.camera.bottom = -20;
         scene.add(dirLight);
 
-        const pointLight = new THREE.PointLight(0x00ff88, 1, 15);
-        pointLight.position.set(0, 2, 0);
+        const pointLight = new THREE.PointLight(0x00aa44, 2, 20);
+        pointLight.position.set(0, 3, 0);
         scene.add(pointLight);
 
-        const gridHelper = new THREE.GridHelper(40, 40, 0x1a1a2e, 0x0f0f1a);
+        const gridHelper = new THREE.GridHelper(40, 40, 0x999999, 0xbbbbbb);
         gridHelper.position.y = 0.01;
         scene.add(gridHelper);
 
         const boardSize = 20;
+        const half = boardSize / 2;
         const cellSize = 1;
+
+        // Border around play area
+        const borderHeight = 1;
+        const borderMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+        const borderGeo = new THREE.BoxGeometry(0.4, borderHeight, boardSize + 0.4);
+        const borderLeft = new THREE.Mesh(borderGeo, borderMat);
+        borderLeft.position.set(-half - 0.2, borderHeight / 2, 0);
+        borderLeft.castShadow = true;
+        borderLeft.receiveShadow = true;
+        scene.add(borderLeft);
+
+        const borderRight = new THREE.Mesh(borderGeo, borderMat);
+        borderRight.position.set(half + 0.2, borderHeight / 2, 0);
+        borderRight.castShadow = true;
+        borderRight.receiveShadow = true;
+        scene.add(borderRight);
+
+        const borderGeo2 = new THREE.BoxGeometry(boardSize + 0.4, borderHeight, 0.4);
+        const borderTop = new THREE.Mesh(borderGeo2, borderMat);
+        borderTop.position.set(0, borderHeight / 2, -half - 0.2);
+        borderTop.castShadow = true;
+        borderTop.receiveShadow = true;
+        scene.add(borderTop);
+
+        const borderBottom = new THREE.Mesh(borderGeo2, borderMat);
+        borderBottom.position.set(0, borderHeight / 2, half + 0.2);
+        borderBottom.castShadow = true;
+        borderBottom.receiveShadow = true;
+        scene.add(borderBottom);
 
         let score = 0;
         let gameRunning = true;
@@ -84,9 +114,9 @@
         // Each segment: { pos: Vector3, mesh: Mesh }
         const snake = [];
 
-        const headMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff88, emissive: 0x003300, roughness: 0.3, metalness: 0.1 });
-        const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x00aa44, emissive: 0x001100, roughness: 0.4, metalness: 0.0 });
-        const foodMaterial = new THREE.MeshStandardMaterial({ color: 0xff4444, emissive: 0x330000, roughness: 0.2, metalness: 0.1 });
+        const headMaterial = new THREE.MeshStandardMaterial({ color: 0x00aa00, emissive: 0x003300, roughness: 0.2, metalness: 0.1 });
+        const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x007700, emissive: 0x001100, roughness: 0.3, metalness: 0.0 });
+        const foodMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0x330000, roughness: 0.1, metalness: 0.1 });
 
         function initSnake() {
             for (const seg of snake) {
